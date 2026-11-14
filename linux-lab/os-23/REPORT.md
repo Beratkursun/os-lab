@@ -43,7 +43,14 @@ ayrı ve temiz temel checkout'ta tekrarlandı; genel testlerin hepsi geçti iddi
 ## AI kullanım beyanı ve kalan teslim adımı
 
 Kod, test ve belgeler ChatGPT/Codex yardımıyla hazırlanmış ve test edilmiştir.
-Bu beyan öğrencinin araçları şahsen çalıştırdığı veya video çektiği iddiasını içermez.
-Ubuntu Server üzerinde doğrulama ve öğrencinin 2–4 dakikalık anlatımlı ekran
-videosunun paylaşılabilir bağlantısı henüz sağlanmamıştır. Bu nedenle PR,
-incelemeye açık uygulamadır; eksiksiz vize kabulü/merge edilmiş teslim değildir.
+Öğrenci, Ubuntu terminalinde komutları çalıştırıp ekran görüntülerini paylaşmıştır.
+14 Kasım 18:57 ekranında 12 görev testi başarılıdır (0.331 saniye). 19:08 ortak
+test özeti 2 süit başarılı, 4 süit başarısız, 1 süit atlandı biçimindedir.
+Cleanup bölümünde 4 başarısızlık ve 5 hata, OS-30 bölümünde 116 başarılı test
+vardır. Tam log, Ubuntu sürümü/commit kimliği ve canlı paket sorgularının
+çıktıları henüz alınmamıştır; bütün ortak testlerin geçtiği iddia edilmez.
+Ayrıntılı ekran transkripsiyonu VERIFY.md içindedir.
+
+Öğrencinin 2–4 dakikalık anlatımlı ekran videosunun erişilebilir bağlantısı
+henüz sağlanmamıştır. Bu nedenle uygulama PR'ı taslaktır; eksiksiz vize kabulü
+veya birleştirilmiş teslim olarak gösterilmez.
