@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""OS-23: read-only dpkg inventory, file list and literal path ownership.
+"""OS-23: salt okunur dpkg envanteri, dosya listesi ve tam yol sahipliği.
 
-Python 3.11+, Debian/Ubuntu dpkg. No root, shell, network or package changes.
+Python 3.11+ ve Debian/Ubuntu dpkg gerekir. Root, shell, ağ veya paket değişikliği yoktur.
 """
 from __future__ import annotations
 
@@ -25,26 +25,26 @@ def run_dpkg(*args: str, admindir: str | None = None) -> str:
             errors="replace", timeout=20, env=env, check=False,
         )
     except FileNotFoundError as exc:
-        raise InventoryError("dpkg is unavailable; run on Debian or Ubuntu") from exc
+        raise InventoryError("dpkg bulunamadı; Debian veya Ubuntu üzerinde çalıştırın") from exc
     except subprocess.TimeoutExpired as exc:
-        raise InventoryError("dpkg exceeded the 20-second timeout") from exc
+        raise InventoryError("dpkg, 20 saniyelik süre sınırını aştı") from exc
     except OSError as exc:
-        raise InventoryError(f"could not execute dpkg: {exc}") from exc
+        raise InventoryError(f"dpkg çalıştırılamadı: {exc}") from exc
     if result.returncode:
-        raise InventoryError(result.stderr.strip() or f"dpkg exited {result.returncode}")
+        raise InventoryError(result.stderr.strip() or f"dpkg çıkış kodu: {result.returncode}")
     return result.stdout
 
 
 def package_name(value: str) -> str:
     # Concrete package only: no dpkg patterns or option injection.
     if not re.fullmatch(r"[a-z0-9][a-z0-9+.-]+(?::[a-z0-9][a-z0-9-]*)?", value):
-        raise argparse.ArgumentTypeError("expected a concrete Debian package name (optionally :architecture)")
+        raise argparse.ArgumentTypeError("somut bir Debian paket adı girin (isteğe bağlı :mimari eki)")
     return value
 
 
 def literal_path(value: str) -> str:
     if not value.startswith("/") or any(ord(c) < 32 or ord(c) == 127 for c in value):
-        raise argparse.ArgumentTypeError("expected an absolute path without control characters")
+        raise argparse.ArgumentTypeError("kontrol karakteri içermeyen mutlak dosya yolu girin")
     return value
 
 
@@ -61,17 +61,17 @@ def parse_inventory(output: str) -> list[dict]:
             continue
         # dpkg -l: three status columns, space, name/version/arch/description.
         if len(line) < 5 or line[3] != " ":
-            raise InventoryError("unexpected dpkg -l record")
+            raise InventoryError("beklenmeyen dpkg -l kaydı")
         fields = line[4:].split(None, 3)
         if len(fields) != 4:
-            raise InventoryError("incomplete dpkg -l record")
+            raise InventoryError("eksik dpkg -l kaydı")
         name, version, architecture, description = fields
         status = line[:3]
         records.append(dict(package=name, version=version, architecture=architecture,
                             description=description, status=status,
                             installed=status[1] == "i"))
     if not started:
-        raise InventoryError("dpkg -l header was not recognized")
+        raise InventoryError("dpkg -l başlığı tanınmadı")
     return records
 
 
@@ -106,17 +106,17 @@ def owners(path: str, **options) -> dict:
                     # dpkg can emit diversion metadata as well as ownership.
                     continue
     if not packages:
-        raise InventoryError(f"no exact package owner recorded for {path}")
+        raise InventoryError(f"tam yol için kayıtlı paket sahibi bulunamadı: {path}")
     return {"path": path, "packages": sorted(packages)}
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     modes = parser.add_mutually_exclusive_group(required=True)
-    modes.add_argument("-l", "--list", action="store_true", help="list package states, including residual configuration")
-    modes.add_argument("-L", "--files", type=package_name, metavar="PACKAGE")
-    modes.add_argument("-S", "--owner", type=literal_path, metavar="ABSOLUTE_PATH")
-    parser.add_argument("--admindir", type=literal_path, help="read an alternate dpkg database (e.g. a test snapshot)")
+    modes.add_argument("-l", "--list", action="store_true", help="artık yapılandırma dahil paket durumlarını listele")
+    modes.add_argument("-L", "--files", type=package_name, metavar="PAKET")
+    modes.add_argument("-S", "--owner", type=literal_path, metavar="MUTLAK_YOL")
+    parser.add_argument("--admindir", type=literal_path, help="alternatif dpkg veritabanını oku (örneğin test kopyası)")
     args = parser.parse_args(argv)
     operation = "list" if args.list else "files" if args.files else "owner"
     try:
