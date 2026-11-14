@@ -231,10 +231,11 @@ bağlamına göre toplamlar değişebilir. Görsel tek başına JSON çıktısı
 `apply` veya canlı `rollback` işlemlerinin doğrulandığını göstermez. Mock test
 sonuçları ve doğrulama sınırları için [VERIFY.md](os-30/VERIFY.md) dosyasına bakın.
 
-## OS-23: dpkg inventory and file ownership
+## OS-23: dpkg paket envanteri ve dosya sahipliği
 
-The read-only [dpkg inventory tool](scripts/dpkg_inventory.py) requires Python
-3.11+ and Debian/Ubuntu `dpkg`. No sudo, network, installation or removal is used.
+[dpkg envanter aracı](scripts/dpkg_inventory.py), Python 3.11+ ve Debian/Ubuntu
+`dpkg` komutunu kullanır. Salt okunur çalışır; sudo veya ağ erişimi gerektirmez.
+Depo kökünden çalıştırın:
 
 ```bash
 python3 linux-lab/scripts/dpkg_inventory.py -l
@@ -242,21 +243,24 @@ python3 linux-lab/scripts/dpkg_inventory.py -L bash
 python3 linux-lab/scripts/dpkg_inventory.py -S /usr/bin/dpkg
 ```
 
-Run these from the repository root. Every successful query returns schema-version-1
-JSON; collection errors return `ok: false` and exit 1. Invalid usage exits 2.
-`-l` preserves the three dpkg state characters (including residual-config and
-unconfigured packages), with a separate installed count. `-S` accepts an exact,
-absolute database path, including spaces or literal wildcard characters. It does
-not resolve symlinks or guess `/bin` versus `/usr/bin`; try the path recorded by
-`dpkg -L PACKAGE`. The database is evidence of package ownership, not a check of
-current file existence or integrity. Package-maintainer-created files may be absent.
-`--admindir /absolute/database` reads a snapshot or synthetic test database.
-Output stays on stdout unless the user redirects it; nothing is transmitted.
+`-l` paketlerin adını, sürümünü, mimarisini, açıklamasını ve üç karakterli durumunu
+listeler. Kurulu paket sayısı ayrı hesaplanır; yalnızca yapılandırması kalan
+paketler kurulu sayılmaz. `-L PAKET` kayıtlı dosyaları, `-S /TAM/YOL` dosyanın
+sahibi olan paketleri gösterir. Çoklu sahipler ve mimari ekleri desteklenir.
 
-Offline unit and optional real-dpkg fixture checks:
+Başarılı sorgular sürüm 1 JSON döndürür. İşlem hataları `ok: false` ve çıkış 1,
+yanlış kullanım çıkış 2 üretir. Dosya yolundaki boşluk ve joker karakterleri
+korunur. Sembolik bağlantılar otomatik çözülmez: `/bin` ve `/usr/bin` farklı
+veritabanı kayıtları olabilir. `dpkg -L PAKET` çıktısındaki tam yolu kullanın.
+Sahiplik kaydı dosyanın mevcut veya değiştirilmemiş olduğunu kanıtlamaz.
+
+`--admindir /tam/veritabani/yolu`, sistem veritabanını değiştirmeden bir kopyayı
+veya sentetik test veritabanını okur. Çıktı yalnızca terminale yazılır.
+
+Çevrimdışı birim testleri ve dpkg mevcutsa geçici veritabanıyla bütünleşme testi:
 
 ```bash
 python3 android-lab/lab/tests/test_dpkg_inventory.py
 ```
 
-See [OS-23 report](os-23/REPORT.md) and [verification](os-23/VERIFY.md).
+[Görev raporu](os-23/REPORT.md) · [Doğrulama sonuçları](os-23/VERIFY.md).
