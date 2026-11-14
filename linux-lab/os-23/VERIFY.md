@@ -101,3 +101,39 @@ Source engine 176 passed, cleanup reference 35 OK, cleanup engine yine
 3 failures/6 errors, Rust cargo yok skipped. `lat check` aynı tek mevcut
 cleanup-lab paragraf uzunluğu hatasını verdi. Yukarıdaki ilk tablo önceki
 checkout'a aittir; son durum bu bölümdedir.
+
+## Ubuntu'da son teslim kontrolü ve video akışı
+
+Ubuntu terminalinde aşağıdaki komutlar çalıştırılmalıdır. Bunlar henüz
+öğrencinin Ubuntu makinesinde çalıştırılmış sayılmaz:
+
+```bash
+git clone --branch feat/dpkg-inventory https://github.com/Beratkursun/os-lab.git os23-teslim
+cd os23-teslim
+python3 --version
+python3 linux-lab/scripts/dpkg_inventory.py --help
+python3 linux-lab/scripts/dpkg_inventory.py -l
+python3 linux-lab/scripts/dpkg_inventory.py -L dpkg
+python3 linux-lab/scripts/dpkg_inventory.py -S /usr/bin/dpkg
+python3 android-lab/lab/tests/test_dpkg_inventory.py
+./scripts/run-tests.sh --quick 2>&1 | tee /tmp/os23-test-sonucu.txt
+```
+
+Paketin dosyası farklı yoldaysa `-L dpkg` çıktısındaki tam yolu `-S` ile sorgulayın.
+Python 3.11+ gerekir. Ortak testin başarısız sonuçları da videoda açıkça gösterilir.
+Daha önce klonlanmış klasörün üzerine yazmayın; örnekteki `os23-teslim` yeni klasördür.
+
+### 2–4 dakikalık anlatım planı
+
+- 0:00–0:25: Ad, ders, OS-23 görevi, fork ve rezervasyon PR'ını göster.
+- 0:25–1:20: Ubuntu terminalinde listeleme, paket dosyaları ve dosyadan sahip bulma modlarını göster.
+- 1:20–1:50: Kodda komutun shell kullanmadan çağrılmasını, girdi doğrulamayı ve süre sınırını anlat.
+- 1:50–2:30: 12 görev testini ve ortak testin gerçek sonucunu göster; mevcut hataları gizleme.
+- 2:30–3:00: REPORT/VERIFY dosyalarını, uygulama PR'ını ve AI kullanım beyanını göster.
+
+Videoyu erişilebilir bağlantıyla paylaş; gizli bilgi, parola veya token gösterme.
+Bağlantı ve gerçek Ubuntu çıktıları PR açıklamasına eklenince son kontrol yapılır.
+Hazır olmayan video için örnek veya sahte bağlantı eklenmez.
+
+Türkçeleştirme sonrası görev testleri yeniden çalıştırıldı: **12 test başarılı**.
+JSON alan adları ve komut seçenekleri mevcut arayüzle uyum için korunmuştur.
