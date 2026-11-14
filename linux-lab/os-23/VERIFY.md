@@ -71,3 +71,33 @@ Bu belgede video linki veya Ubuntu başarı kanıtı uydurulmamıştır.
 `lat check` çalıştırıldı. OS-23 bağlantıları ve kısa giriş paragrafı kontrolü
 geçer; tüm grafik, önceden var olan `lat.md/cleanup-lab.md:237` paragraf
 uzunluğu hatası nedeniyle başarısızdır. Aynı tek hata temel checkout'ta da vardır.
+
+## PR #208 — upstream birleştirmesinden sonra son kontrol
+
+PR: https://github.com/keyvanarasteh/os-lab/pull/208 (taslak).
+Upstream `33d703fc946d6f67472dd64fc8a89e5348a0c8a5` uygulama dalına
+`08c92550da18c4d1b3fc2ad83ee1a7070216bbca` ile alındı. İki ortak raporun
+çakışması, güncel OS-21 raporları korunup OS-23 bağlantıları eklenerek çözüldü.
+Kaynak kod ve 12 görev testi değişmedi; görev testleri tekrar **12 passed**.
+
+Güncel upstream Android suite'i temiz checkout'ta **368 passed, 8 failed,
+4 skipped**; OS-23 eklenmiş sürüm **380 passed, 8 failed, 4 skipped** verdi.
+Aynı sekiz başarısız test karşılaştırıldı. Önceki beşine eklenenler
+`test_oslab_console` içindeki üç native macOS capability testidir. Bunlar
+upstream'de de başarısızdır; OS-23 ile ilgili değillerdir.
+
+Birleştirme sonrası ortak komutun gerçek son çıktı özeti:
+
+```text
+Ran 116 tests in 30.797s
+OK
+[ok]   linux-lab/tests (OS-30 hardening)
+--quick: skipping remaining stages
+== Summary ==
+3 passed, 2 failed, 1 skipped
+```
+
+Source engine 176 passed, cleanup reference 35 OK, cleanup engine yine
+3 failures/6 errors, Rust cargo yok skipped. `lat check` aynı tek mevcut
+cleanup-lab paragraf uzunluğu hatasını verdi. Yukarıdaki ilk tablo önceki
+checkout'a aittir; son durum bu bölümdedir.
