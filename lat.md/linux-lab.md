@@ -83,3 +83,19 @@ proven run-owned UFW addition may be removed, with ambiguous firewall state
 reported as partial recovery. Legacy/incomplete evidence is not trusted.
 Rollback tests in [[linux-lab/tests/test_rollback.py]] use temporary files
 and fake commands.
+
+## OS-23 read-only dpkg inventory
+
+[[linux-lab/scripts/dpkg_inventory.py]] wraps dpkg list, package-file and exact
+absolute-path ownership queries into versioned JSON.
+
+It keeps package status
+separate from installed counts, preserves multiarch names, escapes dpkg search
+globs and filters returned ownership by the literal path. It does not resolve
+symlinks, alter packages, require root or send telemetry. An alternate admin
+database supports snapshots and synthetic integration fixtures.
+
+[[android-lab/lab/tests/test_dpkg_inventory.py]] covers offline command failures,
+input validation and parsing; a real dpkg subprocess additionally checks a
+temporary synthetic database when dpkg is installed. Host/Ubuntu acceptance is
+separate from fixture evidence, as recorded in [[linux-lab/os-23/VERIFY.md]].
