@@ -29,6 +29,34 @@ The screen comes from the read-only `/api/labs/ios/simulator` and
 change through the previewed plan flow; the console validates the device
 against `xcrun simctl` (see [[ios-lab]]).
 
+## macOS app mirror
+
+When the macOS Lab is ready, [[dashboard/src/views/macos-app-mirror.tsx]]
+floats a draggable, resizable mirror of one real window on this Mac, fed by
+read-only endpoints under `/api/labs/macos/apps` (list, screenshot, stream,
+elements) and `/api/labs/macos/audit`.
+
+Mirror and hotspot clicks preview a `macos-click` action like any other;
+only while control mode is armed (an explicit toggle that disarms itself
+after ten minutes) do clicks land immediately through
+`/api/labs/macos/click`, which stays localhost-only like every other POST.
+The stream is multipart MJPEG with a poll fallback; the elements endpoint
+takes a `revision` query and powers a diff overlay. Right-click or
+long-press a hotspot for the input family (double, right, type, key —
+previewed `macos-input`, typing never sends Return), Deep inspect opens one
+armed-only mac2 session per app through `/api/labs/macos/session*` and
+routes hotspot actions through stable element ids, and the toolbar
+downloads the local audit log from `/api/labs/macos/audit.json`.
+
+The agent surface adds the native AX helper's values, focus and advertised
+actions to every hotspot (a priority trim, with the serving engine shown),
+a hotspot menu with set-value, advertised AX actions, scroll and paste,
+submit-class confirms for Enter and pastes even while armed, a persistent
+panic Stop, single-owner arming, and read-only windows/menu-bar/focused
+endpoints. `console/mcp_server.py` exposes the same guarded surface as a
+stdio MCP server — the model acts, the console guards, every step is
+audited. See [[ios-lab]] for permissions.
+
 ## UX readiness
 
 [[ux-readiness]] records the dashboard's action, endpoint, and navigation
@@ -54,6 +82,17 @@ starting analyses or changing state. Additional [[console/source_api.py]] handle
 use the shared preview and jobs service for explicit actions. Source readiness
 runs natively through Python, and public Source routes show information without
 polling a local engine. See [[source-lab#Console operations]].
+
+## Web Lab console
+
+[[console/web_api.py]] reports Web Lab readiness, starts and stops the engine
+process, and proxies the engine's `/api/web/*` JSON under the same Host guard.
+`console/oslab.py` registers the lab with the `native-rust` provider.
+
+The local workbench route (`/web-lab/`,
+[[dashboard/src/views/web-lab/pages.tsx]]) opens windows, manages injections,
+runs eval and tails the engine's event log; it is console-only and never
+appears on public Pages.
 
 ## Serving and builds
 

@@ -17,10 +17,19 @@ The Jobs page reports cancellation failure beside the selected job and keeps its
 
 ## Detail and endpoint status
 
-[[dashboard/src/views/lab-page.tsx]] keeps the Dependencies card visible while
-anything is missing and hides it once every tracked requirement is found, so
-actions take the whole row. Endpoints and configuration stay in a collapsed
-Advanced settings panel.
+[[dashboard/src/views/lab-page.tsx]] lists only the missing requirements in the
+Dependencies card — a badge reports how many are found — and hides the card once
+every tracked requirement is found, so actions take the whole row.
+
+Lab titles live in the app bar on runtime, Android, Web and Cleanup pages; the
+page body keeps only status and tool controls. The iOS Actions card holds compact, automatically checked real-device
+status and booted simulator cards, with secondary identifiers behind details.
+Action groups use visible Start/Stop labels and a compact grid. Its screen panel docks beside
+the page at desktop widths and overlays it on narrow screens.
+
+Advanced settings, Host tools and Providers open as [[dashboard/src/components/ui.tsx#Modal]]
+dialogs behind header icon buttons; the iOS simulator mirror is a right-side
+[[dashboard/src/views/ios-simulator.tsx#SimulatorDrawer]] panel toggled from the lab header.
 
 [[dashboard/src/views/android/pages.tsx]] keeps its secondary emulator endpoint
 list compact.
