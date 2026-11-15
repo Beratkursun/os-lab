@@ -1,56 +1,42 @@
 # MYO203 — OS-23 — dpkg envanteri ve dosya sahipliği
 
 Öğrenci: Berat Kurşun (`Beratkursun`)  
-Tarih: 14 Kasım 2026  
-Rezervasyon: https://github.com/keyvanarasteh/os-lab/pull/205
+Son güncelleme: 15 Kasım 2026  
+Rezervasyon: https://github.com/keyvanarasteh/os-lab/pull/205  
+Uygulama PR’ı: https://github.com/keyvanarasteh/os-lab/pull/208
 
 ## Problem ve çözüm
 
-`dpkg -l`, `dpkg -L` ve `dpkg -S` çıktılarından paket durumlarını ve dosya
-sahiplerini elle okumak yerine, Python standart kütüphanesiyle tek bir JSON
-arayüzü hazırlandı. Görev kapsamı, `CONTRIBUTING.md` ve dashboard içindeki
-OS-23 kartının `linux-lab/scripts/dpkg_inventory.py` teslimi esas alınarak belirlendi.
+`dpkg -l`, `dpkg -L` ve `dpkg -S` çıktılarından paket durumlarını ve dosya sahiplerini elle okumak yerine Python standart kütüphanesiyle tek bir JSON arayüzü hazırlandı. Görev kapsamı `CONTRIBUTING.md` ve dashboard içindeki OS-23 kartının `linux-lab/scripts/dpkg_inventory.py` teslimine göre belirlendi.
 
 - `-l`: ad, sürüm, mimari, açıklama, üç karakterli durum ve kurulu paket sayısı.
 - `-L PACKAGE`: paketin veritabanında kayıtlı dosyaları; boşluklu yollar korunur.
-- `-S /PATH`: tam yol eşleştirmesi; çoklu sahip ve `:architecture` desteği.
-- `--admindir`: ana sistem veritabanına dokunmadan bir kopya/örnek üzerinde sorgu.
+- `-S /PATH`: tam yol eşleştirmesi, çoklu sahip ve mimari eki desteği.
+- `--admindir`: ana sistem veritabanına dokunmadan bir kopya veya örnek üzerinde sorgu.
 
 ## Tasarım kararları
 
-Komutlar argüman listesiyle çağrılır; shell kullanılmaz. Paket adlarında seçenek
-ve joker girişleri reddedilir. Dosya aramasında dpkg'nin kendi jokerleri de
-kaçırılır, sonuç tam yolla karşılaştırılır. Dil `LC_ALL=C`, süre sınırı 20 saniyedir.
-Eksik komut, zaman aşımı veya bulunamayan paket/yol boş başarılı rapor olarak
-gösterilmez. İşlem hatası JSON ve çıkış 1, kullanım hatası argparse ve çıkış 2 verir.
+Komutlar argüman listesiyle çağrılır; shell kullanılmaz. Paket adlarında seçenek ve joker girişleri reddedilir. Dosya aramasında dpkg jokerleri kaçırılır, sonuç tam yolla karşılaştırılır. Dil `LC_ALL=C`, süre sınırı 20 saniyedir. Eksik komut, zaman aşımı veya bulunamayan paket/yol boş başarılı rapor olarak gösterilmez. İşlem hatası JSON ve çıkış 1, kullanım hatası argparse ve çıkış 2 verir.
 
-Araç sadece yerel paket metadatasını okur; root, ağ, bağımlılık kurulumu veya
-paket silme/güncelleme yoktur. Dosya sahipliği kaydı, dosyanın gerçekten mevcut
-veya değiştirilmemiş olduğunun kanıtı değildir. Symlink veya usr-merge yolları
-otomatik çevrilmez. Bakım betiklerinin oluşturduğu her dosya dpkg'de kayıtlı olmaz.
+Araç yerel paket metadatasını okur; root, ağ veya paket değiştirme işlemi gerektirmez. Dosya sahipliği kaydı dosyanın gerçekten mevcut veya değiştirilmemiş olduğunu kanıtlamaz. Symlink ve usr-merge yolları otomatik çevrilmez. Bakım betiklerinin oluşturduğu her dosya dpkg’de kayıtlı olmaz.
 
 ## Değişen alanlar ve doğrulama
 
-Kaynak: [dpkg_inventory.py](../scripts/dpkg_inventory.py). Testler, deponun ortak
-pytest keşfine dahil olan [test_dpkg_inventory.py](../../android-lab/lab/tests/test_dpkg_inventory.py)
-içindedir. Kullanım `linux-lab/README.md`, davranış `lat.md/linux-lab.md` içinde açıklanır.
-Kanıtlar ve sınırlamalar: [VERIFY.md](VERIFY.md).
+- [Uygulama kodu](../scripts/dpkg_inventory.py)
+- [11 birim testi ve 1 gerçek dpkg bütünleşme testi](../../android-lab/lab/tests/test_dpkg_inventory.py)
+- Kullanım: `linux-lab/README.md`; davranış: `lat.md/linux-lab.md`.
+- [Gerçek sonuçlar ve sınırlamalar](VERIFY.md)
 
-12 görev testi başarılıdır. Gerçek dpkg ile geçici sentetik veritabanı testi,
-canlı Ubuntu Server testiyle aynı şey değildir. Ortak testlerdeki mevcut hatalar
-ayrı ve temiz temel checkout'ta tekrarlandı; genel testlerin hepsi geçti iddiası yoktur.
+Göreve ait 12 test başarılıdır. Sentetik veritabanı bütünleşme testi ile canlı Ubuntu doğrulaması ayrı kanıtlardır. Debian temel sürüm karşılaştırmasında ortak hatalar ayrıca tekrarlandı; bütün ortak testlerin başarılı olduğu iddia edilmez.
 
-## AI kullanım beyanı ve kalan teslim adımı
+## Ubuntu kanıtı ve video
 
-Kod, test ve belgeler ChatGPT/Codex yardımıyla hazırlanmış ve test edilmiştir.
-Öğrenci, Ubuntu terminalinde komutları çalıştırıp ekran görüntülerini paylaşmıştır.
-14 Kasım 18:57 ekranında 12 görev testi başarılıdır (0.331 saniye). 19:08 ortak
-test özeti 2 süit başarılı, 4 süit başarısız, 1 süit atlandı biçimindedir.
-Cleanup bölümünde 4 başarısızlık ve 5 hata, OS-30 bölümünde 116 başarılı test
-vardır. Tam log, Ubuntu sürümü/commit kimliği ve canlı paket sorgularının
-çıktıları henüz alınmamıştır; bütün ortak testlerin geçtiği iddia edilmez.
-Ayrıntılı ekran transkripsiyonu VERIFY.md içindedir.
+[2 dakika 35 saniyelik Ubuntu uygulama ve test videosunu izle](bandicam%202026-11-15%2015-48-43-153.mp4)
 
-Öğrencinin 2–4 dakikalık anlatımlı ekran videosunun erişilebilir bağlantısı
-henüz sağlanmamıştır. Bu nedenle uygulama PR'ı taslaktır; eksiksiz vize kabulü
-veya birleştirilmiş teslim olarak gösterilmez.
+Video 15 Kasım 2026’da bu klasöre kaydedildi. İşletim sistemi bilgilerini, dpkg sorgularını ve 12 görev testinin başarılı sonucunu gösterir. Videoda /usr/bin/dpkg yolunun sahibi dpkg olarak bulunur.
+
+14 Kasım 18:57 ekranında 12 görev testi 0.331 saniyede başarılıdır. 19:08 ortak test özeti **2 süit başarılı, 4 başarısız, 1 atlandı** biçimindedir. Cleanup bölümünde 4 başarısızlık ve 5 hata, OS-30 bölümünde 116 başarılı test vardır. Tam Ubuntu ortak test günlüğü ve o koşunun commit kimliği mevcut değildir. Bu yüzden Ubuntu ortak hatalarının tamamının temel sürüm kaynaklı olduğu ileri sürülmez. Ayrıntılı ekran transkripsiyonu VERIFY.md içindedir.
+
+## AI kullanım beyanı ve teslim durumu
+
+Kod, test ve belgeler ChatGPT/Codex desteğiyle hazırlanmış ve test edilmiştir. Öğrenci Ubuntu terminalindeki çalıştırmaları ve ekran videosunu sağlamıştır. Video ve raporlar GitHub’dadır. Bu belge hocanın kabulünü, PR’ın birleştirilmesini veya Blackboard gönderiminin tamamlandığını beyan etmez.
