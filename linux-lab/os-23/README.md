@@ -2,11 +2,9 @@
 
 Berat Kurşun — MYO203 Açık Kaynak İşletim Sistemleri vize projesi.
 
-## Ubuntu uygulama videosu
+## Teslim notu
 
-[Ubuntu terminalindeki uygulama ve test videosunu izle](bandicam%202026-11-15%2015-48-43-153.mp4)
-
-Video, işletim sistemi bilgilerini, dpkg sorgularını ve 12 görev testinin başarılı sonucunu gösterir.
+Uygulama videosu ve çalışma günlükleri bu depoya eklenmemiştir.
 
 ## Proje belgeleri
 
