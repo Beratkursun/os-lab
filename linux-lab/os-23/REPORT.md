@@ -1,9 +1,9 @@
 # MYO203 — OS-23 — dpkg envanteri ve dosya sahipliği
 
 Öğrenci: Berat Kurşun (`Beratkursun`)  
-Son güncelleme: 15 Kasım 2026  
+Son güncelleme: 18 Kasım 2026  
 Rezervasyon: https://github.com/keyvanarasteh/os-lab/pull/205  
-Uygulama PR’ı: https://github.com/keyvanarasteh/os-lab/pull/208
+Uygulama PR’ı: https://github.com/Beratkursun/os-lab/pull/208
 
 ## Problem ve çözüm
 
@@ -23,20 +23,16 @@ Araç yerel paket metadatasını okur; root, ağ veya paket değiştirme işlemi
 ## Değişen alanlar ve doğrulama
 
 - [Uygulama kodu](../scripts/dpkg_inventory.py)
-- [11 birim testi ve 1 gerçek dpkg bütünleşme testi](../../android-lab/lab/tests/test_dpkg_inventory.py)
+- [11 birim testi ve 1 gerçek dpkg bütünleşme testi](../tests/test_dpkg_inventory.py)
 - Kullanım: `linux-lab/README.md`; davranış: `lat.md/linux-lab.md`.
 - [Gerçek sonuçlar ve sınırlamalar](VERIFY.md)
 
 Göreve ait 12 test başarılıdır. Sentetik veritabanı bütünleşme testi ile canlı Ubuntu doğrulaması ayrı kanıtlardır. Debian temel sürüm karşılaştırmasında ortak hatalar ayrıca tekrarlandı; bütün ortak testlerin başarılı olduğu iddia edilmez.
 
-## Ubuntu kanıtı ve video
+## Kanıt ve teslim durumu
 
-[2 dakika 35 saniyelik Ubuntu uygulama ve test videosunu izle](bandicam%202026-11-15%2015-48-43-153.mp4)
-
-Video 15 Kasım 2026’da bu klasöre kaydedildi. İşletim sistemi bilgilerini, dpkg sorgularını ve 12 görev testinin başarılı sonucunu gösterir. Videoda /usr/bin/dpkg yolunun sahibi dpkg olarak bulunur.
-
-14 Kasım 18:57 ekranında 12 görev testi 0.331 saniyede başarılıdır. 19:08 ortak test özeti **2 süit başarılı, 4 başarısız, 1 atlandı** biçimindedir. Cleanup bölümünde 4 başarısızlık ve 5 hata, OS-30 bölümünde 116 başarılı test vardır. Tam Ubuntu ortak test günlüğü ve o koşunun commit kimliği mevcut değildir. Bu yüzden Ubuntu ortak hatalarının tamamının temel sürüm kaynaklı olduğu ileri sürülmez. Ayrıntılı ekran transkripsiyonu VERIFY.md içindedir.
+Ubuntu çalıştırmasına ait terminal ekranı transkripsiyonu [VERIFY.md](VERIFY.md) içindedir. Video ve çalışma günlükleri bu depoda tutulmaz; harici teslim bağlantısı burada doğrulanmamıştır.
 
 ## AI kullanım beyanı ve teslim durumu
 
-Kod, test ve belgeler ChatGPT/Codex desteğiyle hazırlanmış ve test edilmiştir. Öğrenci Ubuntu terminalindeki çalıştırmaları ve ekran videosunu sağlamıştır. Video ve raporlar GitHub’dadır. Bu belge hocanın kabulünü, PR’ın birleştirilmesini veya Blackboard gönderiminin tamamlandığını beyan etmez.
+Kod, test ve belgeler ChatGPT/Codex desteğiyle hazırlanmıştır. Bu belge hocanın kabulünü, PR’ın birleştirilmesini veya Blackboard gönderiminin tamamlandığını beyan etmez.
