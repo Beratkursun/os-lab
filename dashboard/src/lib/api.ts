@@ -8,7 +8,7 @@
 import { useEffect, useReducer } from "react";
 import type { CapabilityCatalog } from "../health/capabilities";
 
-export type LabId = "android" | "windows" | "linux" | "ios" | "macos" | "source" | "web";
+export type LabId = "android" | "windows" | "winapps" | "linux" | "ios" | "macos" | "source" | "web";
 export type LabState = "ready" | "needs-setup" | "unavailable";
 
 export interface HostTool {
@@ -304,6 +304,76 @@ export interface MacAuditState {
   recording: boolean;
   rows: MacAuditRow[];
 }
+export interface MacDisplay {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  scale: number;
+}
+export interface MacDisplaysInfo {
+  available: boolean;
+  reason: string | null;
+  displays: MacDisplay[];
+}
+export interface MacCapabilities {
+  platform: string;
+  available: boolean;
+  engine: "ax-helper" | "osascript" | null;
+  helperBuilt: boolean;
+  canObserve: string[];
+  canAct: { click: boolean; input: string[]; keys: string[]; setValue: boolean; perform: boolean; deepInspect: boolean };
+  safety: {
+    controlTimeoutSec: number;
+    submitKinds: string[];
+    singleOwner: boolean;
+    panicStop: boolean;
+    auditMax: number;
+    streamCapSec: number;
+    allowlist: boolean;
+  };
+  control: MacControlState;
+}
+export interface MacPermission {
+  granted: boolean | null;
+  grantTo: string;
+  hint: string | null;
+}
+export interface MacPermissions {
+  accessibility: MacPermission;
+  screenRecording: MacPermission;
+  responsibleApp: string | null;
+}
+export type MacPane = "accessibility" | "screen-recording";
+export interface MacSearchInfo {
+  windowId: number;
+  app: string;
+  revision: string;
+  engine: string;
+  query: string;
+  count: number;
+  hits: MacElement[];
+}
+/** One visible desktop window in the current Windows session (console/winapps.py). */
+export interface WinApp {
+  /** Stable HWND; Windows can reuse an HWND only after the window is gone. */
+  windowId: number;
+  pid: number;
+  app: string;
+  /** Whether the owning process is elevated; null when Windows would not report it. */
+  elevated: boolean | null;
+  title: string;
+  className: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+export interface WinAppsInfo {
+  available: boolean;
+  reason: string | null;
+  windows: WinApp[];
+}
 export interface Report {
   name: string;
   url: string;
@@ -324,11 +394,14 @@ export interface CleanupStatus {
 export interface CleanupEntry {
   id: string; name: string; category: string; risk: string; hint: string; impact: string;
   defaultSelected: boolean; needsPrivilege: boolean;
+  /** False for measured-only entries (toolchains, agent data): a plan skips them. Absent on older consoles. */
+  cleanable?: boolean; family?: string;
   paths: { template: string; path: string | null; reason: string; source?: string }[];
 }
 export interface CleanupScan {
   cancelled: boolean;
-  entries: { id: string; name: string; category: string; risk: string; sizeBytes: number; files: number; folders: number; unreadable: string[]; paths: { path: string | null; reason: string; source?: string; sizeBytes: number; error: string | null }[] }[];
+  /** modifiedAt: newest file mtime in epoch seconds; absent on older consoles. */
+  entries: { id: string; name: string; category: string; risk: string; sizeBytes: number; files: number; folders: number; unreadable: string[]; modifiedAt?: number | null; paths: { path: string | null; reason: string; source?: string; sizeBytes: number; error: string | null; modifiedAt?: number | null }[] }[];
   totals: { sizeBytes: number; files: number; folders: number; unreadable: number };
 }
 export interface CleanupPlan {
@@ -606,6 +679,10 @@ export const api = {
   cleanupPermissions: () => call<CleanupPermissions>("/api/cleanup/permissions"),
   /** The grant round-trip: name a permission, the console opens System Settings. */
   cleanupPermissionsOpen: (permissionId: string) => post<{ permissionId: string; opened: string }>("/api/cleanup/permissions/open-settings", { permissionId }),
+  /** The app bundle the console runs under: the one that needs Full Disk Access. */
+  cleanupHostApp: () => call<{ app: { path: string; name: string; bundleId: string | null } | null }>("/api/cleanup/permissions/host-app"),
+  cleanupRevealApp: () => post<{ revealed: string }>("/api/cleanup/permissions/reveal-app", {}),
+  cleanupResetPermission: () => post<{ reset: string }>("/api/cleanup/permissions/reset", {}),
   cleanupMonitor: () => call<CleanupMonitorStatus>("/api/cleanup/monitor"),
   cleanupMonitorConfig: (config: CleanupMonitorConfig) => post<CleanupMonitorStatus>("/api/cleanup/monitor/config", config),
   cleanupMonitorEvaluate: () => post<CleanupMonitorStatus>("/api/cleanup/monitor/evaluate"),
@@ -673,6 +750,15 @@ export const api = {
     del<{ closed: boolean }>(`/api/labs/macos/session/${encodeURIComponent(bundleId)}`),
   macosAudit: () => call<MacAuditState>("/api/labs/macos/audit"),
   macosAuditUrl: "/api/labs/macos/audit.json",
+  macosDisplays: () => call<MacDisplaysInfo>("/api/labs/macos/displays"),
+  macosCapabilities: () => call<MacCapabilities>("/api/labs/macos/capabilities"),
+  macosPermissions: () => call<MacPermissions>("/api/labs/macos/permissions"),
+  macosRequestAccess: (pane: MacPane) =>
+    post<{ ok: boolean; pane: MacPane; trusted: boolean | null; openedPane: boolean; grantTo: string | null }>(
+      "/api/labs/macos/permission/request", { pane }),
+  macosSearch: (windowId: number, query: string) =>
+    call<MacSearchInfo>(`/api/labs/macos/apps/${windowId}/search?q=${encodeURIComponent(query)}`),
+  macosEventsUrl: "/api/labs/macos/events",
   macosStop: () => post<{ ok: boolean; sessionsClosed: string[] }>("/api/labs/macos/stop"),
   macosAxWindows: (pid: number) => call<{ windows: MacAxWindow[] }>(`/api/labs/macos/apps/${pid}/windows`),
   macosMenubar: (pid: number) => call<{ menubar: MacMenuNode }>(`/api/labs/macos/apps/${pid}/menubar`),
@@ -683,6 +769,8 @@ export const api = {
     post<{ ok: boolean; actionSent: boolean; verify?: Record<string, unknown> }>("/api/labs/macos/element/set", input),
   macosAxPerform: (input: { pid: number; path: string; identity?: string; action: string; windowId?: number }) =>
     post<{ ok: boolean; actionSent: boolean }>("/api/labs/macos/element/perform", input),
+  winappsApps: () => call<WinAppsInfo>("/api/labs/winapps/apps"),
+  winappsAppScreenshotUrl: (windowId: number) => `/api/labs/winapps/apps/${windowId}/screenshot`,
   plan: (request: LabRequest) => post<{ plan: LabPlan; token: string }>("/api/labs/plan", { request }),
   start: (request: LabRequest, token: string) => post<LabJob>("/api/labs/start", { request, token }),
   jobs: () => call<{ jobs: LabJob[] }>("/api/jobs"),

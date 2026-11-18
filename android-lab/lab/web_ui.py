@@ -57,6 +57,10 @@ try:
     import web_api  # noqa: E402  (console/web_api.py: Web Lab engine readiness and proxy)
 except ImportError:
     web_api = None
+try:
+    import winapps  # noqa: E402  (console/winapps.py: read-only native Windows app mirror)
+except ImportError:
+    winapps = None
 ARTIFACTS_DIR = os.path.join(SCRIPT_DIR, "artifacts")
 SCRIPTS_DIR = os.path.join(SCRIPT_DIR, "scripts")
 
@@ -151,7 +155,62 @@ def cached_host():
         return HOST_CACHE["value"]
 
 
+class _CountingReader:
+    """Wraps the request stream and counts the bytes a handler really consumed."""
+
+    def __init__(self, raw):
+        self._raw = raw
+        self.count = 0
+
+    def read(self, size=-1):
+        data = self._raw.read(size)
+        self.count += len(data)
+        return data
+
+    def readline(self, size=-1):
+        data = self._raw.readline(size)
+        self.count += len(data)
+        return data
+
+    def __getattr__(self, name):
+        return getattr(self._raw, name)
+
+
 class LabHttpHandler(BaseHTTPRequestHandler):
+    def setup(self):
+        super().setup()
+        self.rfile = _CountingReader(self.rfile)
+
+    def parse_request(self):
+        # The request line and headers are read through the same stream: restart the count once
+        # they are parsed, so `count` is the body bytes a handler read and the drain sees what is left.
+        parsed = super().parse_request()
+        self.rfile.count = 0
+        return parsed
+
+    def _drain_request_body(self):
+        """Read what a handler left unread before the connection closes.
+
+        A request refused early (403, 413, 501...) never reads its body. Closing a socket that still
+        holds unread bytes makes the OS send a reset, and the client can see "connection reset"
+        instead of the refusal. Small bodies are discarded; anything declared larger than the cap
+        just closes the connection.
+        """
+        try:
+            declared = int(self.headers.get("Content-Length", 0) or 0)
+        except (TypeError, ValueError):
+            return
+        left = declared - getattr(self.rfile, "count", 0)
+        if left <= 0:
+            return
+        if left > 1_000_000:
+            self.close_connection = True
+            return
+        try:
+            self.rfile.read(left)
+        except OSError:
+            self.close_connection = True
+
     def log_message(self, fmt, *args):
         # Polling is frequent; keep the terminal for errors
         if not self.path.startswith(("/api/logs", "/api/jobs", "/api/health", "/api/host", "/api/labs/", "/api/capabilities", "/api/cleanup", "/api/web")):
@@ -330,6 +389,12 @@ class LabHttpHandler(BaseHTTPRequestHandler):
             self._source_reply(400, {"error": "Invalid Source Lab request or unavailable private storage"})
 
     def do_DELETE(self):
+        try:
+            self._do_delete()
+        finally:
+            self._drain_request_body()
+
+    def _do_delete(self):
         if not self._host_ok():
             return
         if self.headers.get("X-OSLab") != "1":
@@ -420,6 +485,14 @@ class LabHttpHandler(BaseHTTPRequestHandler):
             self._json(200, oslab.macos_control_state())
         elif len(parts) == 4 and parts[:2] == ["api", "labs"] and parts[2] == "macos" and parts[3] == "session":
             self._json(200, oslab.macos_session_state(REPO_ROOT))
+        elif len(parts) == 4 and parts[:2] == ["api", "labs"] and parts[2] == "macos" and parts[3] == "displays":
+            self._json(200, oslab.macos_displays())
+        elif len(parts) == 4 and parts[:2] == ["api", "labs"] and parts[2] == "macos" and parts[3] == "capabilities":
+            self._json(200, oslab.macos_capabilities(REPO_ROOT))
+        elif len(parts) == 4 and parts[:2] == ["api", "labs"] and parts[2] == "macos" and parts[3] == "permissions":
+            self._json(200, oslab.macos_permissions(REPO_ROOT))
+        elif len(parts) == 4 and parts[:2] == ["api", "labs"] and parts[2] == "macos" and parts[3] == "events":
+            self._macos_events()
         elif len(parts) == 4 and parts[:2] == ["api", "labs"] and parts[2] == "macos" and parts[3] == "audit":
             self._json(200, oslab.macos_audit_rows())
         elif len(parts) == 4 and parts[:2] == ["api", "labs"] and parts[2] == "macos" and parts[3] == "audit.json":
@@ -437,6 +510,9 @@ class LabHttpHandler(BaseHTTPRequestHandler):
             revision = (urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
                         .get("revision") or [None])[0]
             self._json(200, oslab.macos_window_elements(REPO_ROOT, parts[4], revision))
+        elif len(parts) == 6 and parts[:4] == ["api", "labs", "macos", "apps"] and parts[5] == "search":
+            query = (urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("q") or [""])[0]
+            self._json(200, oslab.macos_search_elements(REPO_ROOT, parts[4], query))
         elif len(parts) == 6 and parts[:4] == ["api", "labs", "macos", "apps"] and parts[5] == "stream":
             self._macos_stream(parts[4])
         elif len(parts) == 6 and parts[:4] == ["api", "labs", "macos", "apps"] and parts[5] == "windows":
@@ -447,6 +523,25 @@ class LabHttpHandler(BaseHTTPRequestHandler):
             self._json(200, oslab.macos_ax_focused(REPO_ROOT, {"pid": parts[4]}))
         elif len(parts) == 6 and parts[:4] == ["api", "labs", "macos", "session"] and parts[5] == "elements":
             self._json(200, oslab.macos_session_elements(REPO_ROOT, parts[4]))
+        elif len(parts) == 4 and parts[:2] == ["api", "labs"] and parts[2] == "winapps" and parts[3] == "apps":
+            # Native Windows app mirror is read-only and independent of the Windows VM lifecycle.
+            if winapps is None:
+                self._json(501, {"error": "The Windows app mirror module (console/winapps.py) is not installed"})
+                return
+            self._json(200, winapps.winapps_windows())
+        elif len(parts) == 4 and parts[:2] == ["api", "labs"] and parts[2] == "winapps" and parts[3] == "doctor":
+            if winapps is None:
+                self._json(501, {"error": "The Windows app mirror module (console/winapps.py) is not installed"})
+                return
+            self._json(200, winapps.doctor())
+        elif len(parts) == 6 and parts[:2] == ["api", "labs"] and parts[2] == "winapps" and parts[3] == "apps" and parts[5] == "screenshot":
+            if winapps is None:
+                self._json(501, {"error": "The Windows app mirror module (console/winapps.py) is not installed"})
+                return
+            try:
+                self._send_bytes(200, winapps.winapps_window_screenshot(parts[4]), "image/png", cache="no-store")
+            except winapps.WinAppError as exc:
+                self._json(400, {"error": str(exc)})
         elif path == "/api/jobs":
             self._json(200, {"jobs": JOBS.list()})
         elif len(parts) == 3 and parts[:2] == ["api", "jobs"]:
@@ -459,6 +554,12 @@ class LabHttpHandler(BaseHTTPRequestHandler):
             self._json(404, {"error": "Not found"})
 
     def do_POST(self):
+        try:
+            self._do_post()
+        finally:
+            self._drain_request_body()
+
+    def _do_post(self):
         if not self._host_ok():
             return
         # Browsers cannot add a custom header cross-site without a CORS preflight, which this
@@ -579,7 +680,7 @@ class LabHttpHandler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.end_headers()
-        deadline = time.time() + 600
+        deadline = time.time() + oslab._MACOS_STREAM_CAP
         epoch = oslab._MACOS_STREAM_EPOCH
         try:
             for frame in oslab.macos_window_stream(wid, fps, epoch):
@@ -590,6 +691,35 @@ class LabHttpHandler(BaseHTTPRequestHandler):
                     break
         except (OSError, ValueError):
             pass  # the client hung up or the window vanished mid-frame; the panel falls back to the poll
+
+    def _macos_events(self):
+        """Live audit feed: text/event-stream of audit rows as they are recorded, a heartbeat
+        every 15 s, and the same bounds as the mirror stream — it ends on client disconnect, the
+        panic stop (stream epoch) or the stream cap, so handlers never dangle."""
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        epoch = oslab._MACOS_STREAM_EPOCH
+        deadline = time.time() + oslab._MACOS_STREAM_CAP
+        _, seq = oslab.macos_audit_since(10 ** 12)  # start at "now": history is on /audit
+        last_beat = 0.0
+        try:
+            self.wfile.write(b"retry: 3000\n\n")
+            while time.time() < deadline and oslab._MACOS_STREAM_EPOCH == epoch:
+                rows, latest = oslab.macos_audit_since(seq)
+                for row in rows:
+                    self.wfile.write(b"data: " + json.dumps(row).encode("utf-8") + b"\n\n")
+                seq = latest
+                if rows or time.time() - last_beat >= 15:
+                    if not rows:
+                        self.wfile.write(b": heartbeat\n\n")
+                    self.wfile.flush()
+                    last_beat = time.time()
+                time.sleep(0.5)
+        except (OSError, ValueError):
+            pass  # the client hung up; nothing to clean up
 
     def _lab_post(self, path: str):
         parts = [p for p in path.split("/") if p]
@@ -612,6 +742,9 @@ class LabHttpHandler(BaseHTTPRequestHandler):
         elif path == "/api/labs/macos/element/read":
             # Read-only: one attribute of one element by path (MIR-08).
             self._json(200, oslab.macos_ax_read(REPO_ROOT, self._read_json()))
+        elif path == "/api/labs/macos/permission/request":
+            # Consent only: fires the Accessibility dialog or opens the Privacy pane; nothing else changes.
+            self._json(200, oslab.macos_request_access(REPO_ROOT, self._read_json()))
         elif path == "/api/labs/macos/stop":
             # The panic stop (MIR-11): disarm, close sessions, end streams — always safe.
             self._json(200, oslab.macos_panic_stop(REPO_ROOT))
