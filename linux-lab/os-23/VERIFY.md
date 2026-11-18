@@ -1,7 +1,7 @@
 # OS-23 — Doğrulama ve gerçek test sonuçları
 
 Öğrenci: Berat Kurşun (`Beratkursun`)  
-Son güncelleme: 15 Kasım 2026
+Son güncelleme: 18 Kasım 2026
 
 ## Tekrar çalıştırma komutları
 
@@ -13,17 +13,15 @@ python3 --version
 python3 linux-lab/scripts/dpkg_inventory.py -l
 python3 linux-lab/scripts/dpkg_inventory.py -L dpkg
 python3 linux-lab/scripts/dpkg_inventory.py -S /usr/bin/dpkg
-python3 android-lab/lab/tests/test_dpkg_inventory.py
+python3 linux-lab/tests/test_dpkg_inventory.py
 ./scripts/run-tests.sh --quick
 ```
 
 Bu komut bloğu çalıştırma talimatıdır; aşağıdaki sonuçlar kanıtın elde edildiği ortama göre ayrılmıştır.
 
-## 15 Kasım 2026 — Ubuntu uygulama videosu
+## Video ve çalışma günlükleri
 
-[2 dakika 35 saniyelik gerçek terminal videosu](bandicam%202026-11-15%2015-48-43-153.mp4)
-
-Video GitHub’a kaydedilmiştir. İşletim sistemi bilgileri, dpkg dosya listesi, `/usr/bin/dpkg` için sahiplik sorgusu ve 12 testin `OK` sonucu görülür. Sahiplik çıktısında `packages: ["dpkg"]` bulunur. Bu video bütün ortak testlerin başarılı olduğunu göstermez.
+Uygulama videosu ve çalışma günlükleri bu depoya eklenmemiştir. Bu rapor, 14 Kasım tarihli terminal ekranı transkripsiyonunu sunar.
 
 ## 14 Kasım 2026 — öğrencinin Ubuntu ekran kanıtları
 
@@ -61,7 +59,7 @@ Ortak komut başarısızdır. Cleanup ekranında platform seçimi, relocation ve
 Ortam: Debian 13, x86_64, Python 3.12.14. Bu sonuçlar öğrencinin Ubuntu koşusundan ayrıdır.
 
 ```bash
-python3 -m pytest android-lab/lab/tests/test_dpkg_inventory.py -q
+python3 -m pytest linux-lab/tests/test_dpkg_inventory.py -q
 ```
 
 Sonuç: **12 başarılı test**. Bunların 11’i çevrimdışı birim testi, biri geçici sentetik veritabanı kullanan gerçek dpkg bütünleşme testidir. Sentetik test ana sistemin paket veritabanını değiştirmez ve canlı Ubuntu testinin yerine geçmez.
@@ -72,8 +70,8 @@ Upstream `33d703fc` ile birleştirme sonrası ortak koşu: **3 süit başarılı
 
 ## Teslim durumu ve sınırlamalar
 
-- Uygulama, 12 görev testi, Türkçe raporlar ve video GitHub’dadır.
-- [Pull Request #208](https://github.com/keyvanarasteh/os-lab/pull/208)
+- Uygulama, görev testleri ve raporlar GitHub’dadır. Video veya çalışma günlüğü bu depoda bulunmaz; harici teslim durumu doğrulanmamıştır.
+- [Pull Request #208](https://github.com/Beratkursun/os-lab/pull/208)
 - Ubuntu ortak testlerinin tam günlüğü ve o koşunun commit kimliği mevcut değildir.
 - Öğretim üyesinin kabulü, PR’ın birleştirilmesi veya Blackboard gönderiminin tamamlandığı iddia edilmez.
 - Kod, test ve belgeler ChatGPT/Codex desteğiyle hazırlanmıştır.
