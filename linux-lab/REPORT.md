@@ -10,9 +10,3 @@ Bu calismada OS-21 (Boot-Time Python Service Starter) gorevi kapsaminda Linux si
 - Ana dali (master) bozmadan izole bir sekilde calismak icin gorev ozelinde yeni bir branch (dal) (os-21-systemd-service) olusturmanin onemini kavradim.
 - Degisiklikleri gondermeden once yerel dogrulama testlerini (./scripts/run-tests.sh --quick) calistirarak kod kalitesini ve kabuk sozdizimini (bash -n) kontrol etmeyi deneyimledim.
 - Anlamli commit mesajlari yazarak degisiklikleri kendi fork depoma (git push) aktarmayi ve ana projeye Pull Request (PR) acarak acik kaynak katkisi sunma is akisini uygulamali olarak ogrendim.
-
-## OS-23 — Berat Kurşun / MYO203
-
-Bağımsız dpkg envanteri ve dosya sahipliği katkısı:
-[OS-23 REPORT](os-23/REPORT.md) · [OS-23 VERIFY](os-23/VERIFY.md).
-Bu görev için önceki raporların sonuçları kanıt olarak kullanılmaz.
